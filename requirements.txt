@@ -1,0 +1,14 @@
+# requirements.txt
+
+# AI 求职信息智能筛选助手 · Python 依赖
+# 安装：python -m pip install -r requirements.txt
+
+websockets>=12.0     # NapCat 正向 WebSocket 只读监听
+PyYAML>=6.0          # 配置文件解析（监听群/简历/意向）
+
+# 可选依赖：图片 OCR（模块二 enable_ocr=true 时使用，体积较大，按需安装）
+# 注意：paddleocr 3.x 会连带安装 torch（Windows 下常报 fbgemm.dll 加载失败），
+#       本项目使用 2.x 稳定路线（已实测 Windows + Python 3.11 可用）：
+#   python -m pip install "paddlepaddle==2.6.2" "paddleocr==2.7.3"
+# 若 numpy 被升级到 2.x（paddle 2.6 不兼容），请执行：
+#   python -m pip install "numpy<2"

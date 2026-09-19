@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 求职信息智能筛选助手 · V2.0 控制台</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23111827'/%3E%3Cpath d='M7 12l3.5 3.5L17 9' stroke='%2322d3ee' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0f1419; --bg2:#111a24; --card:#17202c; --card2:#1c2635;
+  --line:#263140; --text:#e6edf3; --muted:#8b98a9; --dim:#5b6675;
+  --accent:#22d3ee; --accent2:#3b82f6; --ok:#34d399; --warn:#fbbf24; --bad:#f87171;
+  --mono:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+/* ===== 顶栏 ===== */
+header{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:16px;padding:0 20px;height:54px;background:rgba(15,20,25,.92);border-bottom:1px solid var(--line);backdrop-filter:blur(8px)}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;letter-spacing:.2px;white-space:nowrap}
+.logo svg{flex:none}
+.logo small{color:var(--muted);font-weight:400;font-size:11px}
+nav{display:flex;gap:4px;flex:1}
+nav button{appearance:none;border:1px solid transparent;background:transparent;color:var(--muted);padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s}
+nav button:hover{color:var(--text);background:var(--card)}
+nav button.active{color:var(--accent);background:var(--card);border-color:var(--line)}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.conn{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.conn i{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.conn.on i{background:var(--ok);box-shadow:0 0 6px var(--ok)}
+.iconbtn{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--text);padding:6px 10px;border-radius:8px;cursor:pointer;font-size:12px;font-family:inherit}
+.iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+/* ===== 布局 ===== */
+main{max-width:1400px;margin:0 auto;padding:20px;display:none}
+main.active{display:block}
+section.view{display:none}
+section.view.active{display:block;animation:fade .25s}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* ===== 通用组件 ===== */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat .k{color:var(--muted);font-size:12px}
+.stat .v{font-size:26px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.stat .v small{font-size:12px;color:var(--muted);font-weight:400}
+.stat.accent .v{color:var(--accent)}
+.stat.ok .v{color:var(--ok)}
+.stat.warn .v{color:var(--warn)}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.toolbar input[type=text]{flex:1;min-width:200px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 12px;font-size:13px;outline:none;font-family:inherit}
+.toolbar input[type=text]:focus{border-color:var(--accent)}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{appearance:none;background:transparent;border:none;color:var(--muted);padding:8px 14px;font-size:12px;cursor:pointer;font-family:inherit}
+.seg button.active{background:var(--accent);color:#06222b;font-weight:600}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:auto}
+thead th{position:sticky;top:0;background:var(--card2);color:var(--muted);text-align:left;padding:10px 12px;font-weight:600;font-size:12px;white-space:nowrap;border-bottom:1px solid var(--line)}
+tbody td{padding:10px 12px;border-bottom:1px solid rgba(38,49,64,.5);vertical-align:top}
+tbody tr{cursor:pointer;transition:background .12s}
+tbody tr:hover{background:rgba(34,211,238,.06)}
+tbody tr:last-child td{border-bottom:none}
+.score{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:26px;border-radius:7px;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
+.s-high{background:rgba(52,211,153,.15);color:var(--ok)}
+.s-mid{background:rgba(251,191,36,.15);color:var(--warn)}
+.s-low{background:rgba(248,113,113,.15);color:var(--bad)}
+.tag{display:inline-block;padding:1px 8px;border-radius:6px;font-size:11px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.tag.rec{border-color:rgba(52,211,153,.4);color:var(--ok)}
+.missing{color:var(--dim)}
+.empty{padding:48px 20px;text-align:center;color:var(--muted)}
+.empty svg{margin-bottom:10px;opacity:.5}
+.mono{font-family:var(--mono);font-size:12px}
+/* ===== 详情弹窗 ===== */
+.modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:100;overflow-y:auto}
+.modal-mask.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--line);border-radius:14px;max-width:760px;width:100%;padding:22px;position:relative;animation:fade .2s}
+.modal h2{font-size:17px;margin-bottom:4px;padding-right:40px}
+.modal .sub{color:var(--muted);font-size:12px;margin-bottom:16px}
+.modal .close{position:absolute;top:14px;right:14px;appearance:none;background:var(--card2);border:1px solid var(--line);color:var(--muted);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:15px}
+.modal .close:hover{color:var(--text);border-color:var(--accent)}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px}
+.detail-grid .it{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+.detail-grid .it .k{font-size:11px;color:var(--muted)}
+.detail-grid .it .val{font-size:13px;margin-top:2px;word-break:break-word}
+.reason-box{background:var(--card2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text)}
+.reason-box .k{color:var(--muted);font-size:11px;margin-bottom:4px}
+/* ===== 图表 ===== */
+#scoreChart{width:100%;height:280px}
+.chart-note{color:var(--dim);font-size:11px;padding:0 16px 12px}
+/* ===== 日报 ===== */
+.report-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.report-toolbar select{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 12px;font-size:13px;outline:none;font-family:inherit}
+#reportContent{padding:24px;font-size:14px}
+#reportContent h1{font-size:20px;margin-bottom:8px}
+#reportContent h2{font-size:16px;margin:18px 0 8px;color:var(--accent)}
+#reportContent h3{font-size:14px;margin:14px 0 6px}
+#reportContent ul,#reportContent ol{margin:6px 0 10px 22px}
+#reportContent p{margin:6px 0}
+#reportContent table{border-collapse:collapse;margin:10px 0;width:100%;font-size:13px}
+#reportContent th,#reportContent td{border:1px solid var(--line);padding:7px 10px;text-align:left}
+#reportContent th{background:var(--card2)}
+#reportContent hr{border:none;border-top:1px solid var(--line);margin:16px 0}
+#reportContent blockquote{border-left:3px solid var(--accent);padding-left:12px;color:var(--muted);margin:8px 0}
+#reportContent code{background:var(--card2);padding:1px 5px;border-radius:4px;font-family:var(--mono);font-size:12px}
+#reportContent pre{background:var(--card2);padding:12px;border-radius:8px;overflow-x:auto;margin:10px 0}
+#reportContent pre code{background:none;padding:0}
+/* ===== 日志 ===== */
+.log-wrap{position:relative}
+.log-head{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--card2)}
+.log-head .status{font-size:12px;color:var(--muted)}
+.log-head .status.on{color:var(--ok)}
+.log-head .spacer{flex:1}
+#logBox{height:calc(100vh - 220px);min-height:320px;overflow-y:auto;padding:12px 14px;font-family:var(--mono);font-size:12px;line-height:1.7;white-space:pre-wrap;word-break:break-all}
+#logBox .l-info{color:var(--muted)}
+#logBox .l-warn{color:var(--warn)}
+#logBox .l-error{color:var(--bad)}
+#logBox .l-debug{color:var(--dim)}
+/* ===== 状态页 ===== */
+.status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:16px}
+.status-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.status-item .k{color:var(--muted);font-size:12px;margin-bottom:6px}
+.status-item .v{font-size:14px;word-break:break-all}
+.status-item .v b{color:var(--accent)}
+#configTree{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;font-family:var(--mono);font-size:12px;overflow-x:auto;white-space:pre-wrap;word-break:break-all;color:var(--muted);max-height:60vh;overflow-y:auto}
+/* ===== 响应式 ===== */
+@media(max-width:720px){
+  header{flex-wrap:wrap;height:auto;padding:10px 14px;gap:8px}
+  nav{order:3;width:100%;overflow-x:auto}
+  nav button{flex:1;white-space:nowrap;text-align:center}
+  main{padding:12px}
+  .cards{grid-template-columns:repeat(2,1fr)}
+  .hdr-right{display:none}
+  .detail-grid{grid-template-columns:1fr 1fr}
+  #logBox{height:60vh}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="5" fill="#22d3ee" opacity=".15"/><path d="M7 12l3.5 3.5L17 9" stroke="#22d3ee" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    AI 求职信息筛选助手 <small>V2.0 控制台</small>
+  </div>
+  <nav>
+    <button data-view="jobs" class="active">岗位看板</button>
+    <button data-view="report">日报预览</button>
+    <button data-view="logs">实时日志</button>
+    <button data-view="status">状态与配置</button>
+  </nav>
+  <div class="hdr-right">
+    <span class="conn" id="conn"><i></i><span id="connText">连接中</span></span>
+    <button class="iconbtn" id="refreshBtn">刷新</button>
+  </div>
+</header>
+
+<!-- ===== 视图：岗位看板 ===== -->
+<main id="view-jobs" class="active">
+  <section class="view active">
+    <div class="cards">
+      <div class="stat"><div class="k">岗位总数</div><div class="v" id="stTotal">-</div></div>
+      <div class="stat ok"><div class="k">推荐岗位（≥阈值）</div><div class="v" id="stRec">-</div></div>
+      <div class="stat accent"><div class="k">涉及公司</div><div class="v" id="stCompany">-</div></div>
+      <div class="stat warn"><div class="k">日报数</div><div class="v" id="stReport">-</div></div>
+    </div>
+    <div class="panel" style="margin-bottom:16px">
+      <div style="padding:14px 16px 4px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-weight:600;font-size:14px">匹配分数分布</div>
+        <span id="chartFallback" style="display:none;color:var(--dim);font-size:11px">（图表库加载失败，已降级为表格）</span>
+      </div>
+      <div id="scoreChart"></div>
+      <div class="chart-note">分数 0~100，≥ 阈值为推荐岗位（绿色）；按全部岗位存档统计</div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="jobSearch" placeholder="搜索：公司 / 岗位 / 城市 / 技术栈 / 打分理由">
+      <div class="seg" id="recSeg">
+        <button data-rec="all" class="active">全部</button>
+        <button data-rec="1">推荐</button>
+        <button data-rec="0">仅存档</button>
+      </div>
+      <select id="sortSel" style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 12px;font-size:12px;outline:none">
+        <option value="score">按分数排序</option>
+        <option value="time">按时间排序</option>
+      </select>
+      <button class="iconbtn" id="manualBtn" style="border-color:rgba(34,211,238,.45);color:var(--accent);font-weight:600">＋ 手动录入</button>
+    </div>
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <colgroup><col style="width:64px"><col style="width:13%"><col style="width:15%"><col style="width:9%"><col style="width:8%"><col style="width:15%"><col style="width:10%"><col style="width:9%"><col style="width:8%"><col style="width:6%"><col style="width:60px"></colgroup>
+          <thead><tr>
+            <th>分数</th><th>公司</th><th>岗位</th><th>城市</th><th>学历</th>
+            <th>技术栈</th><th>投递方式</th><th>截止时间</th><th>类别</th><th>时间</th><th>操作</th>
+          </tr></thead>
+          <tbody id="jobBody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="jobEmpty" style="display:none">
+        <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>
+        <p id="jobEmptyText">暂无岗位数据</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ===== 视图：日报预览 ===== -->
+<main id="view-report">
+  <section class="view">
+    <div class="toolbar report-toolbar">
+      <select id="reportSel"><option value="">（暂无日报）</option></select>
+      <button class="iconbtn" id="copyReportBtn">一键复制</button>
+      <button class="iconbtn" id="reloadReportBtn">刷新列表</button>
+    </div>
+    <div class="panel">
+      <div id="reportContent" class="empty">
+        <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        <p>选择日期查看日报</p>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <div style="padding:12px 16px;font-weight:600;font-size:14px">当日岗位明细
+        <small style="color:var(--muted);font-weight:400">（点击行展开岗位详情）</small>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <colgroup><col style="width:60px"><col style="width:22%"><col style="width:24%"><col style="width:16%"><col style="width:10%"><col style="width:12%"></colgroup>
+          <thead><tr>
+            <th>分数</th><th>公司</th><th>岗位</th><th>城市</th><th>类别</th><th>标记</th>
+          </tr></thead>
+          <tbody id="reportJobBody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="reportJobEmpty" style="display:none"><p>当日暂无岗位存档</p></div>
+    </div>
+  </section>
+</main>
+
+<!-- ===== 视图：实时日志 ===== -->
+<main id="view-logs">
+  <section class="view">
+    <div class="panel log-wrap">
+      <div class="log-head">
+        <span class="status" id="logStatus">自动刷新中</span>
+        <span class="spacer"></span>
+        <div class="seg" id="logLevelSeg" style="margin-right:4px">
+          <button data-level="all" class="active">全部</button>
+          <button data-level="ERROR">ERROR</button>
+          <button data-level="WARN">WARN</button>
+          <button data-level="INFO">INFO</button>
+          <button data-level="DEBUG">DEBUG</button>
+        </div>
+        <button class="iconbtn" id="pauseLogBtn">暂停</button>
+        <button class="iconbtn" id="clearLogBtn">清屏</button>
+      </div>
+      <div id="logBox" class="empty">
+        <p>加载中…</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ===== 视图：状态与配置 ===== -->
+<main id="view-status">
+  <section class="view">
+    <div class="status-grid">
+      <div class="status-item"><div class="k">当前时间</div><div class="v mono" id="stTime">-</div></div>
+      <div class="status-item"><div class="k">监听 QQ 群</div><div class="v" id="stGroups">-</div></div>
+      <div class="status-item"><div class="k">LLM 服务</div><div class="v mono" id="stLlm">-</div></div>
+      <div class="status-item"><div class="k">日志文件大小</div><div class="v mono" id="stLogSize">-</div></div>
+    </div>
+    <div style="margin:14px 0 8px;font-weight:600;font-size:14px">在线编辑配置
+      <small style="color:var(--muted);font-weight:400">（保存后需重启主程序生效；原配置自动备份为 config.yaml.bak）</small>
+    </div>
+    <div class="panel" style="padding:16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">
+          监听 QQ 群（逗号分隔）
+          <input type="text" id="cfgGroups" placeholder="如 123456789, 987654321" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit">
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">
+          推荐分数阈值（0~100）
+          <input type="number" id="cfgThreshold" min="0" max="100" value="80" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit">
+        </label>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);margin-top:10px">
+        用户简历
+        <textarea id="cfgResume" rows="4" placeholder="学历、专业、技能栈、项目/实习经历…" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical"></textarea>
+      </label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);margin-top:10px">
+        求职意向
+        <textarea id="cfgIntention" rows="2" placeholder="目标城市、岗位方向、行业偏好、硬性排除项…" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical"></textarea>
+      </label>
+      <div style="display:flex;gap:20px;align-items:center;margin-top:12px">
+        <label style="font-size:12px;color:var(--muted)">图片 OCR
+          <select id="cfgOcr" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-family:inherit">
+            <option value="true">开启</option>
+            <option value="false">关闭</option>
+          </select>
+        </label>
+        <label style="font-size:12px;color:var(--muted)">网页抓取
+          <select id="cfgWeb" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-family:inherit">
+            <option value="true">开启</option>
+            <option value="false">关闭</option>
+          </select>
+        </label>
+        <span class="spacer" style="flex:1"></span>
+        <button class="iconbtn" id="saveConfigBtn">保存配置</button>
+        <span id="cfgSaveMsg" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+    </div>
+    <div style="margin:14px 0 8px;font-weight:600;font-size:14px">config.yaml 配置回显 <small style="color:var(--muted);font-weight:400">（只读快照，api_key 已脱敏）</small></div>
+    <div id="configTree">加载中…</div>
+  </section>
+</main>
+
+<!-- ===== 岗位详情弹窗 ===== -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <button class="close" id="modalClose">×</button>
+    <h2 id="mTitle">-</h2>
+    <div class="sub mono" id="mSub">-</div>
+    <div class="detail-grid" id="mGrid"></div>
+    <div class="reason-box"><div class="k">AI 打分理由</div><div id="mReason">-</div></div>
+  </div>
+</div>
+
+<!-- ===== 手动录入弹窗 ===== -->
+<div class="modal-mask" id="manualMask">
+  <div class="modal" style="max-width:640px">
+    <button class="close" id="manualClose">×</button>
+    <h2>手动录入就业信息</h2>
+    <div class="sub">填写后与群消息岗位走同一套 AI 打分 / 去重 / 归档流程（公司、岗位必填；LLM 不可用时按未打分归档，不会丢失）</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">公司名称 *
+        <input type="text" id="mjCompany" placeholder="如 某某科技" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">岗位名称 *
+        <input type="text" id="mjTitle" placeholder="如 Java 后端开发工程师" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">工作地点
+        <input type="text" id="mjLocation" placeholder="如 西安 / 上海" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">学历要求
+        <input type="text" id="mjEducation" placeholder="如 本科及以上" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">技术栈
+        <input type="text" id="mjTech" placeholder="如 Java、Spring Boot、MySQL" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">薪资范围
+        <input type="text" id="mjSalary" placeholder="如 15-20K×13 薪" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">投递方式
+        <input type="text" id="mjApply" placeholder="投递链接 / 邮箱 / 内推方式" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">截止时间
+        <input type="text" id="mjDeadline" placeholder="如 2026-10-31 / 招满即止" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit">
+      </label>
+    </div>
+    <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);margin-top:10px">备注（可选）
+      <textarea id="mjNote" rows="2" placeholder="来源渠道、内推人、特别说明…" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical"></textarea>
+    </label>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:14px">
+      <button class="iconbtn" id="mjSubmit" style="border-color:rgba(34,211,238,.45);color:var(--accent);font-weight:600;padding:9px 18px">提交录入</button>
+      <span id="mjMsg" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ===== 工具 ===== */
+const $ = s => document.querySelector(s);
+const MISSING = "【信息未提及】";
+const CATEGORY = {recruitment:"正式招聘",lecture:"宣讲通知",referral:"内推信息",spam:"闲聊广告",fraud:"诈骗信息",other:"其他"};
+const fmt = s => (s === undefined || s === null || String(s).trim() === "" || String(s).trim() === MISSING)
+  ? '<span class="missing">' + MISSING + '</span>' : String(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const scoreClass = sc => sc >= 80 ? "s-high" : (sc >= 60 ? "s-mid" : "s-low");
+
+/* ===== 状态管理 ===== */
+const state = { view:"jobs", jobs:[], stats:null, recFilter:"all", kw:"", sort:"score",
+                logAuto:true, logBuf:"", logLevel:"all", reportDate:"", cfgLoaded:false };
+
+/* ===== 路由（hash） ===== */
+const VIEWS = ["jobs","report","logs","status"];
+function switchView(v){
+  if(!VIEWS.includes(v)) v = "jobs";
+  state.view = v;
+  VIEWS.forEach(x => {
+    const main = document.getElementById("view-"+x);
+    if(main) main.classList.toggle("active", x===v);
+    const sec = main && main.querySelector("section.view");
+    if(sec) sec.classList.toggle("active", x===v);
+    const btn = document.querySelector('nav button[data-view="'+x+'"]');
+    if(btn) btn.classList.toggle("active", x===v);
+  });
+  if(v==="jobs") loadJobs();
+  if(v==="report") loadReports();
+  if(v==="status") loadStatus();
+}
+window.addEventListener("hashchange", () => switchView(location.hash.replace("#","")));
+/* 顶部导航按钮点击（此前仅 hashchange 生效，鼠标点 button 不改 hash 导致点不动） */
+document.querySelectorAll('nav button[data-view]').forEach(b => {
+  b.addEventListener("click", () => {
+    const v = b.dataset.view;
+    if(location.hash === "#" + v) switchView(v);
+    else location.hash = v;
+  });
+});
+
+/* ===== API ===== */
+async function api(path){
+  const r = await fetch(path);
+  const j = await r.json();
+  if(!j.success) throw new Error(j.error || "请求失败");
+  return j;
+}
+
+/* ===== 岗位看板 ===== */
+function renderJobs(){
+  const tbody = $("#jobBody");
+  const empty = $("#jobEmpty");
+  tbody.innerHTML = "";
+  if(!state.jobs.length){
+    empty.style.display = "block";
+    $("#jobEmptyText").textContent = state.kw || state.recFilter!=="all"
+      ? "没有符合筛选条件的岗位" : "暂无岗位数据：收到招聘消息并被识别后，岗位会出现在这里";
+    return;
+  }
+  empty.style.display = "none";
+  state.jobs.forEach(r => {
+    const tr = document.createElement("tr");
+    const sc = Number(r.score);
+    tr.innerHTML =
+      '<td><span class="score '+scoreClass(sc)+'">'+sc+'</span></td>'+
+      '<td>'+fmt(r.company_name)+'</td>'+
+      '<td><b>'+fmt(r.job_title)+'</b></td>'+
+      '<td>'+fmt(r.location)+'</td>'+
+      '<td>'+fmt(r.education)+'</td>'+
+      '<td>'+fmt(r.tech_stack)+'</td>'+
+      '<td>'+fmt(r.apply_method)+'</td>'+
+      '<td>'+fmt(r.deadline)+'</td>'+
+      '<td><span class="tag'+(r.recommended?' rec':'')+'">'+(CATEGORY[r.category]||r.category||"-")+'</span></td>'+
+      '<td class="mono" style="color:var(--muted);white-space:nowrap">'+(r.recorded_at||"").slice(5,16)+'</td>'+
+      '<td><button class="iconbtn" data-del="'+esc(r.file||"")+'" title="删除该岗位（投完归档）" '+
+        'style="padding:3px 8px;font-size:11px;border-color:rgba(248,113,113,.4);color:var(--bad)">删除</button></td>';
+    tr.addEventListener("click", () => openDetail(r));
+    tr.querySelector("[data-del]").addEventListener("click", e => {
+      e.stopPropagation();
+      const file = e.currentTarget.dataset.del;
+      if(!file) return;
+      if(!confirm("删除「"+(r.company_name||"未知公司")+" · "+(r.job_title||"未知岗位")+"」？\n投完的岗位删除后会移入备份目录，可恢复。")) return;
+      deleteJob(file, e.currentTarget);
+    });
+    tbody.appendChild(tr);
+  });
+}
+/* 删除岗位（投完归档）：DELETE /api/jobs?file=xxx，成功后刷新列表 */
+async function deleteJob(file, btn){
+  const old = btn.textContent;
+  btn.disabled = true; btn.textContent = "…";
+  try{
+    const resp = await fetch("/api/jobs?file=" + encodeURIComponent(file), { method: "DELETE" });
+    const j = await resp.json();
+    if(!j.success) throw new Error(j.error || "删除失败");
+    loadJobs(); updateStats();
+  }catch(e){
+    alert("删除失败: " + e.message);
+    btn.disabled = false; btn.textContent = old;
+  }
+}
+function renderChart(){
+  const el = $("#scoreChart");
+  if(!window.echarts){ $("#chartFallback").style.display=""; return; }
+  const data = state.jobs.map(r=>Number(r.score)).filter(s=>!isNaN(s));
+  if(!data.length){ el.innerHTML = ""; return; }
+  const bins = Array(10).fill(0);
+  data.forEach(s=>bins[Math.min(9,Math.floor(s/10))]++);
+  const chart = echarts.init(el);
+  chart.setOption({
+    grid:{left:44,right:16,top:20,bottom:28},
+    tooltip:{trigger:"axis",backgroundColor:"#17202c",borderColor:"#263140",textStyle:{color:"#e6edf3"}},
+    xAxis:{type:"category",data:["0-9","10-19","20-29","30-39","40-49","50-59","60-69","70-79","80-89","90-100"],
+      axisLine:{lineStyle:{color:"#263140"}},axisLabel:{color:"#8b98a9",fontSize:10}},
+    yAxis:{type:"value",minInterval:1,axisLine:{show:false},splitLine:{lineStyle:{color:"#1c2635"}},axisLabel:{color:"#8b98a9",fontSize:10}},
+    series:[{type:"bar",data:bins.map((v,i)=>({value:v,itemStyle:{color: i>=8?"#34d399":"#22d3ee",borderRadius:[4,4,0,0]}})),
+      barMaxWidth:36,label:{show:true,position:"top",color:"#8b98a9",fontSize:10}}]
+  });
+}
+async function loadJobs(){
+  try{
+    const p = new URLSearchParams({sort:state.sort});
+    if(state.kw) p.set("q",state.kw);
+    if(state.recFilter!=="all") p.set("recommended",state.recFilter);
+    const j = await api("/api/jobs?"+p.toString());
+    state.jobs = j.data;
+    renderJobs();
+    renderChart();
+    updateStats();
+  }catch(e){ $("#jobEmptyText").textContent = "加载失败: "+e.message; $("#jobEmpty").style.display="block"; }
+}
+async function updateStats(){
+  try{
+    const j = await api("/api/status");
+    state.stats = j.data;
+    $("#stTotal").textContent = j.data.job_count;
+    $("#stRec").textContent = j.data.recommended_count;
+    $("#stCompany").textContent = j.data.company_count;
+    $("#stReport").textContent = j.data.report_count;
+  }catch(e){}
+}
+let kwTimer;
+$("#jobSearch").addEventListener("input", e => {
+  clearTimeout(kwTimer);
+  kwTimer = setTimeout(()=>{ state.kw = e.target.value.trim(); loadJobs(); }, 250);
+});
+$("#recSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  state.recFilter = b.dataset.rec;
+  document.querySelectorAll("#recSeg button").forEach(x=>x.classList.toggle("active", x===b));
+  loadJobs();
+});
+$("#sortSel").addEventListener("change", e => { state.sort = e.target.value; loadJobs(); });
+
+/* ===== 详情弹窗 ===== */
+function openDetail(r){
+  $("#mTitle").textContent = (r.company_name===MISSING||!r.company_name?"未知公司":r.company_name)+" · "+(r.job_title===MISSING||!r.job_title?"未知岗位":r.job_title);
+  const cat = CATEGORY[r.category]||r.category||"-";
+  const flag = r.review_required ? "待人工复核" : (r.incomplete ? "基础信息残缺" : "");
+  $("#mSub").textContent = "分数 "+r.score+" / 阈值 "+r.threshold+" · "+(r.recommended?"推荐岗位":"仅存档")+" · "+cat+" · "+(flag || "归档于 "+(r.recorded_at||"-"));
+  const fields = [
+    ["公司",r.company_name],["岗位",r.job_title],["城市",r.location],["学历",r.education],
+    ["技术栈",r.tech_stack],["投递方式",r.apply_method],["截止时间",r.deadline],["信息来源",r.source],
+    ["群号","g"+r.group_id],["消息ID","m"+r.message_id]
+  ];
+  if(r.salary) fields.splice(3, 0, ["薪资", r.salary]);
+  if(r.note) fields.push(["备注", r.note]);
+  $("#mGrid").innerHTML = fields.map(([k,v])=>
+    '<div class="it"><div class="k">'+k+'</div><div class="val">'+fmt(v)+'</div></div>').join("");
+  $("#mReason").innerHTML = esc(r.reason||"-");
+  $("#modalMask").classList.add("open");
+}
+$("#modalClose").addEventListener("click", ()=>$("#modalMask").classList.remove("open"));
+$("#modalMask").addEventListener("click", e => { if(e.target===e.currentTarget) $("#modalMask").classList.remove("open"); });
+document.addEventListener("keydown", e => { if(e.key==="Escape") $("#modalMask").classList.remove("open"); });
+
+/* ===== 手动录入 ===== */
+function openManual(){
+  $("#manualMask").classList.add("open");
+  $("#mjMsg").textContent = "";
+}
+function closeManual(){
+  $("#manualMask").classList.remove("open");
+  $("#mjMsg").textContent = "";
+}
+$("#manualBtn").addEventListener("click", openManual);
+$("#manualClose").addEventListener("click", closeManual);
+$("#manualMask").addEventListener("click", e => { if(e.target===e.currentTarget) closeManual(); });
+document.addEventListener("keydown", e => { if(e.key==="Escape") closeManual(); });
+async function submitManual(){
+  const body = {
+    company_name: $("#mjCompany").value.trim(),
+    job_title: $("#mjTitle").value.trim(),
+    location: $("#mjLocation").value.trim(),
+    education: $("#mjEducation").value.trim(),
+    tech_stack: $("#mjTech").value.trim(),
+    salary: $("#mjSalary").value.trim(),
+    apply_method: $("#mjApply").value.trim(),
+    deadline: $("#mjDeadline").value.trim(),
+    note: $("#mjNote").value.trim(),
+  };
+  if(!body.company_name || !body.job_title){
+    $("#mjMsg").style.color = "var(--bad)";
+    $("#mjMsg").textContent = "公司名称和岗位名称必填";
+    return;
+  }
+  const btn = $("#mjSubmit"), msg = $("#mjMsg");
+  btn.disabled = true; btn.textContent = "提交中（AI 打分约需数秒）…";
+  msg.style.color = "var(--muted)"; msg.textContent = "正在提交并打分…";
+  try{
+    const r = await fetch("/api/jobs", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body),
+    });
+    const j = await r.json();
+    if(!j.success) throw new Error(j.error || "提交失败");
+    if(j.duplicate){
+      msg.style.color = "var(--warn)";
+      msg.textContent = "该岗位已存在（公司+岗位名相同），未重复添加，已保留原记录";
+      return;
+    }
+    msg.style.color = "var(--ok)";
+    msg.textContent = "已录入 · 匹配分 " + j.score + " · " + (j.recommended ? "进入推荐（≥阈值）" : "未达推荐阈值");
+    $("#mjCompany").value = ""; $("#mjTitle").value = ""; $("#mjLocation").value = "";
+    $("#mjEducation").value = ""; $("#mjTech").value = ""; $("#mjSalary").value = "";
+    $("#mjApply").value = ""; $("#mjDeadline").value = ""; $("#mjNote").value = "";
+    loadJobs(); updateStats();
+    setTimeout(closeManual, 1600);
+  }catch(e){
+    msg.style.color = "var(--bad)";
+    msg.textContent = "提交失败: " + e.message;
+  }finally{
+    btn.disabled = false; btn.textContent = "提交录入";
+  }
+}
+$("#mjSubmit").addEventListener("click", submitManual);
+$("#mjNote").addEventListener("keydown", e => { if(e.key==="Enter" && e.ctrlKey) submitManual(); });
+
+/* ===== 日报 ===== */
+async function loadReports(){
+  try{
+    const j = await api("/api/reports");
+    const sel = $("#reportSel");
+    sel.innerHTML = "";
+    if(!j.data.length){
+      sel.innerHTML = '<option value="">（暂无日报）</option>';
+      $("#reportContent").className = "empty";
+      $("#reportContent").innerHTML = '<svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><p>暂无日报：有推荐岗位后每日自动生成</p>';
+      return;
+    }
+    j.data.forEach(r=>{
+      const o = document.createElement("option");
+      o.value = r.date; o.textContent = r.date+"（"+(r.size/1024).toFixed(1)+" KB）";
+      sel.appendChild(o);
+    });
+    if(!state.reportDate) state.reportDate = j.data[0].date;
+    sel.value = state.reportDate;
+    loadReport(state.reportDate);
+  }catch(e){}
+}
+async function loadReport(date){
+  if(!date) return;
+  state.reportDate = date;
+  try{
+    const j = await api("/api/report?date="+encodeURIComponent(date));
+    renderMarkdown(j.content);
+  }catch(e){
+    $("#reportContent").className = "empty";
+    $("#reportContent").innerHTML = "<p>"+esc(e.message)+"</p>";
+  }
+  // 当日岗位明细（问题修复 2：日报预览支持展开单条岗位详情）
+  try{
+    const j = await api("/api/jobs?date="+encodeURIComponent(date));
+    renderReportJobs(j.data);
+  }catch(e){}
+}
+function renderReportJobs(list){
+  const body = $("#reportJobBody"), empty = $("#reportJobEmpty");
+  body.innerHTML = "";
+  if(!list.length){ empty.style.display = "block"; return; }
+  empty.style.display = "none";
+  list.forEach(r => {
+    const tr = document.createElement("tr");
+    const sc = Number(r.score);
+    const flag = r.review_required ? "待复核" : (r.incomplete ? "残缺" : "");
+    tr.innerHTML =
+      '<td><span class="score '+scoreClass(sc)+'">'+sc+'</span></td>'+
+      '<td>'+fmt(r.company_name)+'</td>'+
+      '<td><b>'+fmt(r.job_title)+'</b></td>'+
+      '<td>'+fmt(r.location)+'</td>'+
+      '<td><span class="tag'+(r.recommended?' rec':'')+'">'+(CATEGORY[r.category]||r.category||"-")+'</span></td>'+
+      '<td>'+(flag ? '<span class="tag" style="border-color:rgba(251,191,36,.5);color:var(--warn)">'+flag+'</span>' : '-')+'</td>';
+    tr.addEventListener("click", () => openDetail(r));
+    body.appendChild(tr);
+  });
+}
+/* 极简 Markdown 渲染（日报格式：标题/列表/表格/粗体/引用） */
+function renderMarkdown(md){
+  const box = $("#reportContent");
+  box.className = "";
+  if(!md || !md.trim()){ box.className="empty"; box.innerHTML="<p>（日报为空）</p>"; return; }
+  const lines = md.split(/\r?\n/);
+  let html = "", inTable = false;
+  const inline = s => esc(s)
+    .replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>")
+    .replace(/`([^`]+)`/g,"<code>$1</code>");
+  for(let i=0;i<lines.length;i++){
+    const l = lines[i];
+    const h = l.match(/^(#{1,3})\s+(.*)$/);
+    if(h){ html += "<h"+h[1].length+">"+inline(h[2])+"</h"+h[1].length+">"; inTable=false; continue; }
+    if(/^\s*\|/.test(l) && /(^\s*\||\|\s*$)/.test(l)){
+      if(!inTable){ inTable = true; html += "<table>"; }
+      if(/^\s*\|[\s:|-]+\|?\s*$/.test(l.replace(/\|/g," "))) continue;
+      const cells = l.split("|").map(s=>s.trim()).filter((s,i,arr)=>!(i===0&&s==="" )&&!(i===arr.length-1&&s===""));
+      html += "<tr>"+cells.map(c=>{ const tag = l.trim().startsWith("|")? "td":"td"; return "<"+tag+">"+inline(c)+"</"+tag+">"; }).join("")+"</tr>";
+      continue;
+    }
+    if(inTable){ html += "</table>"; inTable = false; }
+    if(/^\s*[-*+]\s+/.test(l)){ html += "<ul><li>"+inline(l.replace(/^\s*[-*+]\s+/,""))+"</li></ul>"; continue; }
+    if(/^\s*\d+[.、)]\s+/.test(l)){ html += "<ol><li>"+inline(l.replace(/^\s*\d+[.、)]\s+/,""))+"</li></ol>"; continue; }
+    if(/^\s*(---+|\*\*\*+)\s*$/.test(l)){ html += "<hr>"; continue; }
+    if(/^\s*>\s?/.test(l)){ html += "<blockquote>"+inline(l.replace(/^\s*>\s?/,""))+"</blockquote>"; continue; }
+    if(/^\s*```/.test(l)){ html += "<pre>"; i++; while(i<lines.length && !/^\s*```/.test(lines[i])){ html += esc(lines[i])+"\n"; i++; } html += "</pre>"; continue; }
+    if(l.trim()===""){ html += "<p></p>"; continue; }
+    html += "<p>"+inline(l)+"</p>";
+  }
+  if(inTable) html += "</table>";
+  box.innerHTML = html;
+}
+$("#reportSel").addEventListener("change", e => loadReport(e.target.value));
+$("#reloadReportBtn").addEventListener("click", loadReports);
+$("#copyReportBtn").addEventListener("click", async () => {
+  try{
+    await navigator.clipboard.writeText(document.getElementById("reportContent").innerText);
+    const b = $("#copyReportBtn"); b.textContent = "已复制"; setTimeout(()=>b.textContent="一键复制",1200);
+  }catch(e){ alert("复制失败: "+e.message); }
+});
+
+/* ===== 实时日志 ===== */
+const LEVEL_RE = /\[(INFO|WARN|ERROR|DEBUG|WARNING)\]/i;
+function logClass(line){
+  const m = line.match(LEVEL_RE);
+  if(!m) return "l-info";
+  const k = m[1].toUpperCase();
+  if(k==="ERROR") return "l-error";
+  if(k==="WARN"||k==="WARNING") return "l-warn";
+  if(k==="DEBUG") return "l-debug";
+  return "l-info";
+}
+async function pollLogs(){
+  if(!state.logAuto) return;
+  try{
+    const p = new URLSearchParams({lines:"300"});
+    if(state.logLevel && state.logLevel !== "all") p.set("level", state.logLevel);
+    const j = await api("/api/logs?"+p.toString());
+    if(j.content === state.logBuf) return;
+    state.logBuf = j.content;
+    const box = $("#logBox");
+    if(!j.content.trim()){
+      box.className = "empty";
+      box.innerHTML = "<p>暂无 " + (state.logLevel === "all" ? "" : state.logLevel + " 级别") + "日志（自动刷新中…）</p>";
+    }else{
+      box.className = "";
+      box.innerHTML = j.content.split("\n").map(l=>'<div class="'+logClass(l)+'">'+esc(l||" ")+'</div>').join("");
+      box.scrollTop = box.scrollHeight;
+    }
+  }catch(e){}
+}
+/* 日志等级筛选（问题修复 2：实时日志等级筛选，切换后强制重新加载） */
+$("#logLevelSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  if(state.logLevel === b.dataset.level) return;
+  state.logLevel = b.dataset.level;
+  document.querySelectorAll("#logLevelSeg button").forEach(x=>x.classList.toggle("active", x===b));
+  state.logBuf = null;   // null 哨兵：强制本次返回渲染（避免空结果被去重跳过）
+  pollLogs();
+});
+$("#pauseLogBtn").addEventListener("click", () => {
+  state.logAuto = !state.logAuto;
+  $("#pauseLogBtn").textContent = state.logAuto ? "暂停" : "继续";
+  $("#logStatus").textContent = state.logAuto ? "自动刷新中（每 2.5s）" : "已暂停";
+  $("#logStatus").classList.toggle("on", state.logAuto);
+});
+$("#clearLogBtn").addEventListener("click", () => {
+  const box = $("#logBox"); box.className = "empty";
+  box.innerHTML = "<p>已清屏（暂停后日志将重新加载）</p>";
+  state.logBuf = "";
+});
+
+/* ===== 状态与配置 ===== */
+async function loadStatus(){
+  try{
+    const j = await api("/api/status");
+    const d = j.data;
+    $("#stTime").textContent = d.time;
+    $("#stGroups").textContent = d.monitor_groups.length ? d.monitor_groups.join("、") : "未配置";
+    $("#stLlm").textContent = d.llm_base_url || "-";
+    $("#stLogSize").textContent = d.log_size>0 ? (d.log_size/1024).toFixed(1)+" KB" : "0 KB";
+  }catch(e){}
+  try{
+    const j = await api("/api/config");
+    if(j.ok){
+      const c = j.data;
+      // 在线编辑表单（问题修复 2）：仅在首次加载时填充，避免覆盖用户正在编辑的内容
+      if(!state.cfgLoaded){
+        $("#cfgGroups").value = (c.monitor_group_ids||[]).join(", ");
+        $("#cfgThreshold").value = (c.recommend_score_threshold != null ? c.recommend_score_threshold : 80);
+        $("#cfgResume").value = c.user_resume || "";
+        $("#cfgIntention").value = c.user_intention || "";
+        $("#cfgOcr").value = (c.multimodal && c.multimodal.enable_ocr != null)
+          ? String(c.multimodal.enable_ocr) : "true";
+        $("#cfgWeb").value = (c.multimodal && c.multimodal.enable_web_fetch != null)
+          ? String(c.multimodal.enable_web_fetch) : "true";
+        state.cfgLoaded = true;
+      }
+      $("#configTree").textContent = JSON.stringify(c, null, 2);
+    }else{
+      $("#configTree").textContent = "配置解析失败: " + (j.error||"未知错误");
+    }
+  }catch(e){ $("#configTree").textContent = "读取失败: "+e.message; }
+}
+
+/* 在线保存配置（问题修复 2：配置面板在线修改，PUT /api/config） */
+async function saveConfig(){
+  const msg = $("#cfgSaveMsg");
+  const groupsRaw = $("#cfgGroups").value.trim();
+  const groups = groupsRaw
+    ? groupsRaw.split(/[,，\s]+/).filter(Boolean).map(s => {
+        const n = Number(s); return Number.isInteger(n) && n > 0 ? n : NaN;
+      }).filter(n => !isNaN(n))
+    : [];
+  const threshold = parseInt($("#cfgThreshold").value, 10);
+  const payload = {
+    monitor_group_ids: groups,
+    recommend_score_threshold: (isNaN(threshold) ? 80 : Math.max(0, Math.min(100, threshold))),
+    user_resume: $("#cfgResume").value,
+    user_intention: $("#cfgIntention").value,
+    enable_ocr: $("#cfgOcr").value === "true",
+    enable_web_fetch: $("#cfgWeb").value === "true",
+  };
+  msg.style.color = "var(--muted)";
+  msg.textContent = "保存中…";
+  try{
+    const r = await fetch("/api/config", {
+      method: "PUT",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload),
+    });
+    const j = await r.json();
+    if(j.success){
+      msg.style.color = "var(--ok)";
+      msg.textContent = "已保存（重启主程序后生效，原配置已备份为 config.yaml.bak）";
+      try{ const rc = await api("/api/config"); if(rc.ok) $("#configTree").textContent = JSON.stringify(rc.data, null, 2); }catch(_){}
+    }else{
+      msg.style.color = "var(--bad)";
+      msg.textContent = "保存失败: " + (j.error || "未知错误");
+    }
+  }catch(e){
+    msg.style.color = "var(--bad)";
+    msg.textContent = "保存失败: " + e.message;
+  }
+  setTimeout(() => { msg.textContent = ""; }, 8000);
+}
+$("#saveConfigBtn").addEventListener("click", saveConfig);
+
+/* ===== 全局刷新 & 连接状态 ===== */
+$("#refreshBtn").addEventListener("click", () => {
+  loadJobs(); loadReports(); loadStatus(); pollLogs();
+  $("#refreshBtn").textContent = "已刷新"; setTimeout(()=>$("#refreshBtn").textContent="刷新",1000);
+});
+async function ping(){
+  try{
+    await fetch("/api/status");
+    $("#conn").classList.add("on");
+    $("#connText").textContent = "服务在线";
+  }catch(e){
+    $("#conn").classList.remove("on");
+    $("#connText").textContent = "服务离线";
+  }
+}
+
+/* ===== 初始化 ===== */
+(function init(){
+  switchView(location.hash.replace("#","")||"jobs");
+  ping();
+  setInterval(ping, 15000);
+  setInterval(pollLogs, 2500);
+  setInterval(loadStatus, 30000);
+  /* ECharts 按需加载（CDN 失败自动降级） */
+  const s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js";
+  s.onload = () => renderChart();
+  s.onerror = () => { $("#chartFallback").style.display=""; };
+  document.head.appendChild(s);
+  window.addEventListener("resize", () => { if(window.echarts) setTimeout(()=>{ const c=echarts.getInstanceByDom($("#scoreChart")); if(c) c.resize(); },200); });
+})();
+</script>
+</body>
+</html>

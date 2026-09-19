@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<title>画像配置如何驱动岗位打分</title>
+<style>
+  :root { --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --bg:#f8fafc; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: var(--bg); color: var(--ink); padding: 28px 20px; }
+  h1 { font-size: 20px; text-align: center; margin-bottom: 4px; }
+  .sub { text-align: center; color: var(--muted); font-size: 12px; margin-bottom: 22px; }
+  .flow { display: flex; align-items: stretch; justify-content: center; gap: 0; margin: 0 auto; max-width: 980px; }
+  .col { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 14px 16px; flex: 1; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+  .col h2 { font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .col h2 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .c1 h2 .dot { background: #2b8a6e; } .c2 h2 .dot { background: #1971c2; } .c3 h2 .dot { background: #e8590c; }
+  .card { border: 1px solid var(--line); border-left: 3px solid #2b8a6e; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; background: #fcfdfd; }
+  .card.blue { border-left-color: #1971c2; background: #f8fbff; }
+  .card.orange { border-left-color: #e8590c; background: #fffbf7; }
+  .card b { font-size: 13px; }
+  .card .desc { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
+  .arrow { width: 34px; flex: 0 0 34px; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 20px; }
+  .rule { margin: 24px auto 0; max-width: 980px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+  .rule h2 { font-size: 14px; margin-bottom: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; line-height: 1.55; }
+  th { background: #f3f6f8; font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  .tag { display: inline-block; background: #eef6f2; color: #1e7a58; border-radius: 4px; padding: 1px 7px; font-size: 11.5px; margin-right: 4px; }
+  .tag.warn { background: #fff3e8; color: #c05e11; }
+  .foot { text-align: center; color: var(--muted); font-size: 11.5px; margin-top: 16px; }
+  .dim { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 10px; }
+  .dim .no { width: 20px; height: 20px; border-radius: 50%; background: #e7f0fa; color: #1971c2; font-size: 12px; display: flex; align-items: center; justify-content: center; flex: 0 0 20px; margin-top: 1px; }
+  .dim b { font-size: 13px; display: block; }
+  .dim span { font-size: 12px; color: var(--muted); line-height: 1.5; display: block; margin-top: 2px; }
+</style>
+
+<h1>画像配置如何驱动岗位打分</h1>
+<div class="sub">AI 求职信息智能筛选助手 · config.yaml 填法示意（纯 LLM 动态打分，无固定权重，画像文本即打分标准）</div>
+
+<div class="flow">
+  <div class="col c1">
+    <h2><span class="dot"></span>① config.yaml 输入</h2>
+    <div class="card">
+      <b>user_resume（简历全文）</b>
+      <div class="desc">教育 / 项目 / 技能 / 证书 → 提供“能力证据”，约 1185 字</div>
+    </div>
+    <div class="card">
+      <b>user_intention（求职意向）</b>
+      <div class="desc">岗位 / 技术栈 / 城市 / 行业 / 硬排 / 偏好 / 薪资 → 提供“筛选标准”，约 562 字</div>
+    </div>
+    <div class="card">
+      <b>recommend_score_threshold</b>
+      <div class="desc">当前 50：≥50 进日报推荐，&lt;50 仅存档；<b>修改后 Web 保存或重启自动全量重算全部岗位</b></div>
+    </div>
+  </div>
+
+  <div class="arrow">→</div>
+
+  <div class="col c2">
+    <h2><span class="dot"></span>② 模块五 LLM 打分（三个维度）</h2>
+    <div class="dim"><span class="no">1</span><div><b>技能匹配度</b><span>岗位要求 × 简历能力（技术栈、项目经验、学历）</span></div></div>
+    <div class="dim"><span class="no">2</span><div><b>意向匹配度</b><span>地点 / 行业 / 岗位方向；<b style="color:#c05e11">命中硬性排除 → 直接 ≤30 分</b></span></div></div>
+    <div class="dim"><span class="no">3</span><div><b>公司外部核验</b><span>联网检索 WLB / 规模 / 员工风评，只影响风险提示与偏好加分，不改变岗位本身匹配度</span></div></div>
+  </div>
+
+  <div class="arrow">→</div>
+
+  <div class="col c3">
+    <h2><span class="dot"></span>③ 输出决策</h2>
+    <div class="card orange">
+      <b>score ≥ 50</b>
+      <div class="desc">推荐岗位：控制台完整输出、写入每日日报（阈值修改自动全量重算）</div>
+    </div>
+    <div class="card blue">
+      <b>score &lt; 50</b>
+      <div class="desc">仅存档：结构化 JSON 保留，不进推荐/日报</div>
+    </div>
+  </div>
+</div>
+
+<div class="rule">
+  <h2>user_intention 关键写法与作用（本次已按此优化）</h2>
+  <table>
+    <tr><th style="width:34%">意向里的写法</th><th>为什么这么写</th></tr>
+    <tr><td><span class="tag">主栈</span>Java / Spring Boot / MySQL / Redis / RocketMQ<br><span class="tag">无实战</span>Python / Go / Kafka（岗位要求时<b style="color:#c05e11">扣分</b>）<br><span class="tag">方向</span>AI 辅助开发 / AI Agent 应用开发可接受，但核心语言须以 Java 主栈为主</td><td>分清“已掌握”和“无实战”：Go/Python 作为岗位核心语言时因无实战经验扣分，防止 LLM 误当成成熟经验；AI 方向岗位可以投，但不豁免技术栈匹配要求</td></tr>
+    <tr><td>硬性排除：销售 / 客服 / 倒班 / 教培，并注明“命中应低于 30 分”</td><td>对齐打分语义（0~30=命中硬排），让“排除”真正变成硬条件</td></tr>
+    <tr><td>小而美外企 = 外资独资/控股或跨国公司在华机构，≤1000 人优先</td><td>把模糊的“外企”量化，配合公司外部检索才能被 LLM 可靠判断</td></tr>
+    <tr><td>WLB = 双休、无强制加班 / 996 / 大小周</td><td>检索到的员工风评（加班、双休与否）可以直接对应，减少臆测</td></tr>
+    <tr><td>薪资底线：税前年薪（base+奖金）≥ 10 万</td><td>原文“年报”系笔误已改“年薪”；未注明薪资的岗位不扣分，投递前人工确认，避免误杀信息不全的岗位</td></tr>
+    <tr><td>四城“一视同仁”；行业“均可（只看岗位本身）”</td><td>明示不因城市/行业额外加权，防止 LLM 自行猜测西安优先或行业偏好</td></tr>
+  </table>
+</div>
+
+<div class="foot">示意说明：打分维度和阈值语义来自项目 scorer.py / 产品方案 4.5；画像文本为当前写入 config.yaml 的版本（user_resume 1185 字、user_intention 562 字、阈值 50）。阈值修改后 Web 保存或重启程序即自动全量重算推荐标记（v0.7.0）；残缺岗位打分前自动浏览器补全、打分前自动检索公司风评/WLB（牛客等）。</div>

@@ -1,0 +1,78 @@
+# job_assistant/config/config.example.yaml
+
+# AI 求职信息智能筛选助手 · 配置文件示例
+# 使用方式：复制本文件为 config.yaml 并填写真实值，然后启动程序（V1.0 修改后需重启生效）。
+
+# NapCat 接入配置（NapCat 以"正向 WebSocket"方式推送 OneBot v11 事件）
+napcat:
+  ws_url: "ws://127.0.0.1:3001"   # NapCat 正向 WS 服务地址，端口以实际配置为准
+  reconnect_interval: 5           # 断线自动重连间隔（秒）
+  history_backfill: true          # 连接成功后补拉最近群消息（覆盖电脑休眠/程序重启期间错过的消息）
+  backfill_count: 50              # 每群补拉条数上限（低频只读，启动/重连各一次，防风控）
+  backfill_http_url: "http://127.0.0.1:3002"  # NapCat HTTP 服务地址（需在 NapCat WebUI 开启 HTTP 服务，端口 3002；get_group_msg_history 扩展 API 用）
+
+# 监听群白名单：支持 1~N 个 QQ 群号
+# 空数组 [] 表示不监听任何群（程序直接退出，安全兜底）
+# 不在列表内的群消息会被直接丢弃，不进入下游处理流程
+monitor_group_ids:
+  - 123456789
+  - 987654321
+
+# 多模态处理（模块二）配置
+multimodal:
+  enable_ocr: true        # 图片 OCR 开关；true 需先安装 paddleocr（见 requirements.txt 注释）
+  enable_web_fetch: true  # 网页抓取开关
+  ocr_lang: "ch"          # OCR 语言（ch=中英混合）
+  ocr_timeout: 30         # OCR 识别超时（秒），超时标记失败（资源可控）
+  web_timeout: 10         # 网页抓取 / 图片下载超时（秒）
+  web_max_bytes: 1048576  # 网页响应体大小上限（字节，1MB）
+  image_max_bytes: 5242880  # 图片下载大小上限（字节，5MB）
+
+# 本地数据分目录（模块二~六使用，ARCHITECTURE.md 第六章）
+data:
+  root_dir: "./data"      # 数据根目录（相对程序运行目录）
+  raw_msg: "raw_msg"      # 原始消息文本
+  image_raw: "image_raw"  # 下载的图片原始素材（OCR 输入）
+  ocr_result: "ocr_result"  # 图片 OCR 识别结果
+  web_content: "web_content"  # 抓取网页正文
+  jobs: "jobs"            # 结构化岗位 JSON（模块六）
+  report: "report"        # Markdown 每日日报（模块六）
+
+# 用户简历 & 求职意向（模块三，产品方案 4.3）
+# 程序不预置任何固定标签与权重：以下完整文本将原样拼接，作为模块五岗位匹配打分的输入。
+# 修改后重启程序生效（V1.0 暂不支持热加载）；两项均可先留空，后续再补填。
+user_resume: |
+  在此粘贴你的简历全文（教育背景、项目经历、掌握技术栈、实习/竞赛经历等），例如：
+  教育背景：XX大学 计算机科学与技术 本科 2024-2028
+  项目经历：参与校园招聘信息筛选工具开发，负责多模态消息解析模块
+  掌握技术栈：Python / Java / MySQL / Redis
+
+# 求职意向：按模板填写，缺项可留空；不限于以下四项，可自由补充描述
+user_intention: |
+  意向岗位：后端开发工程师
+  意向城市：西安
+  可接受行业：互联网、软件
+  硬性排除：销售、客服、倒班岗
+
+# LLM 接入（模块四 AI 解析 / 模块五 岗位打分共用，ARCHITECTURE.md 各层职责）
+# 直连 DeepSeek 官方 OpenAI 兼容 API（无中间网关）：API Key 在 platform.deepseek.com 的「API Keys」页面创建
+# base_url 指向 DeepSeek 官方 OpenAI 兼容地址（/chat/completions）
+llm:
+  base_url: "https://api.deepseek.com/v1"  # DeepSeek 官方 OpenAI 兼容 API 地址
+  api_key: ""                              # DeepSeek 官方 API Key（sk-...；敏感信息，日志禁止打印）
+  model: "deepseek-chat"                   # 模型名（如 deepseek-chat / deepseek-reasoner）
+  timeout: 60                              # 单次 LLM 调用超时（秒）
+
+# 岗位推荐分数阈值（模块五，产品方案 F6）
+# 所有岗位无论分数高低均全量 JSON 存档；仅分数 ≥ 阈值的岗位在控制台推荐输出、写入日报；
+# 分数 < 阈值的岗位仅后台存档，控制台只打印极简日志
+recommend_score_threshold: 80            # 0~100 整数，默认 80
+
+# 公司外部信息联网检索（模块五打分输入补全，问题修复 5）
+# 打分前检索公司员工风评/WLB/经营资料（Bing 网页搜索 + 百度百科），并入模型输入；
+# 检索全部失败时自动降级：打分理由标注"未自动联网核验，WLB 需人工自查"，
+# 该维度不计入自动打分，日报保留一键复制搜索关键词
+company_research:
+  enable: true     # 开关；关闭后直接跳过检索（打分不包含外部资料）
+  timeout: 8.0     # 单次检索超时（秒）；连续失败可调小降低消息处理延迟
+  max_chars: 1500  # 检索资料截断长度（字符），控制提交给模型的 token 消耗

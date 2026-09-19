@@ -1,0 +1,49 @@
+# ===== Secrets / local config (NEVER commit real keys) =====
+job_assistant/config/config.yaml
+job_assistant/config/config.yaml.bak
+job_assistant/config/config.yaml.userbak_*
+*.local.yaml
+.env
+.env.*
+
+# ===== Runtime data & outputs =====
+data/
+!data/.gitkeep
+
+# ===== Logs =====
+*.log
+run_main.log
+run_main_err.log
+run_web.log
+run_web_err.log
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ===== Virtual environments =====
+.venv/
+venv/
+env/
+
+# ===== IDE / OS =====
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ===== Backups =====
+*.bak
+*.backup
+*_backup_*/
+*_archive_*/
