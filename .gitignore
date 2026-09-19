@@ -47,3 +47,7 @@ Thumbs.db
 *.backup
 *_backup_*/
 *_archive_*/
+
+# ===== Third-party binaries (download yourself) =====
+tools/NapCat/*.zip
+tools/NapCat/*.exe

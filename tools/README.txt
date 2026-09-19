@@ -1,11 +1,14 @@
 # 服务端工具安装说明（2026-09-19 更新：LLM 已由 One API 网关切换为 DeepSeek 官方 API 直连，One API 下线；新增历史补拉 NapCat HTTP 服务）
 
 ## NapCat v4.18.28（QQ 消息监听，只读）
-- 安装包：tools\NapCat\NapCat.Shell.zip（28MB，已下载）
+> 注意：`tools/NapCat/NapCat.Shell.zip` 是第三方二进制（约 28MB），未纳入 git 仓库，需自行下载。
+- 官方发布页：https://github.com/NapNeko/NapCatQQ/releases
+  - Windows：下载 `NapCat.Shell.zip`（即本机使用的版本）
+  - macOS / Linux：**不要用 Windows 的 Shell.zip**，推荐用官方 Docker 镜像（见 https://napcat.apifox.cn/ ），或在 Linux 上使用终端版
+  - 前置条件：本机已装 QQ（当前 9.9.21.38711，满足最低要求 29271+；若启动异常，官方推荐 QQ 9.9.26.44343）
 - 解压位置：C:\Users\26440\NapCat （官方要求：路径不能含中文/空格，故放在 C 盘根用户目录）
 - 启动：双击 C:\Users\26440\NapCat\launcher.bat
-  （或双击 NapCatWinBootMain.exe）
-- 前置条件：本机已装 QQ（当前 9.9.21.38711，满足最低要求 29271+；若启动异常，官方推荐 QQ 9.9.26.44343）
+  （或双击 NapCatWinBootMain.exe；Docker 部署则按官方文档用 docker compose 启动）
 - 登录：启动后需扫码/登录 QQ；WebUI 默认随机密码（在控制台查看）
 - 安全：登录后请在 WebUI 中关闭所有发送接口/自动回复，纯只读模式
 - **历史补拉 HTTP 服务（v0.6.4 起）**：编辑 C:\Users\26440\NapCat\config\onebot11_2644081990.json 的 "httpServers" 数组，
